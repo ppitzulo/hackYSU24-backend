@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-import requests
+import uuid
 
 # Initialize MediaPipe Hands.
 mp_hands = mp.solutions.hands
@@ -19,13 +19,7 @@ cap = cv2.VideoCapture(0)
 
 # Variable to keep track of the last save time
 last_save_time = time.time()
-save_interval = 0.5  # Save an image every 0.5 seconds
-
-PREDICTION_URL = "https://guitarchords826-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/352d7a3b-5364-4b69-9fba-bce2cf2c928e/classify/iterations/Iteration5/image"
-headers = {
-    "Prediction-Key": "4a702a82e3b34cc8bfbb96c623f8bd80",
-    "Content-Type": "application/octet-stream"
-}
+save_interval = 0.25  # Save an image every 0.5 seconds
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -45,8 +39,7 @@ while cap.isOpened():
                 # Draw the hand annotations on the image.
                 # mp_drawing.draw_landmarks(
                 #     frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
-                #     mp_drawing.DrawingSpec(color=(0, 255, 0Detailed error message: {"error":{"code":"401","message":"Access denied due to invalid subscription key or wrong API endpoint. Make sure to provide a valid key for an active subscription and use a correct regional API endpoint for your resource."}}
-    ), thickness=2, circle_radius=2),
+                #     mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
                 #     mp_drawing.DrawingSpec(color=(0, 0, 255), thickness=2, circle_radius=2),
                 # )
 
@@ -85,27 +78,13 @@ while cap.isOpened():
 
                         # Check if the cropped image is not empty
                         if hand_img.size > 0:
-                            # Convert the image to the format expected by the API (bytes)
-                            _, img_encoded = cv2.imencode('.jpg', hand_img)
-                            img_bytes = img_encoded.tobytes()
-
-                            # Make prediction by sending a POST request
-                            try:
-                                response = requests.post(PREDICTION_URL, headers=headers, data=img_bytes)
-                                response.raise_for_status()  # This will raise an exception for HTTP error codes
-
-                                predictions = response.json().get('predictions', [])
-                                if predictions:  # Check if the predictions list is not empty
-                                    for prediction in predictions:
-                                        print("\t" + prediction['tagName'] + ": {0:.2f}%".format(prediction['probability'] * 100))
-                                else:
-                                    print("No predictions were returned.")
-                            except requests.exceptions.HTTPError as http_err:
-                                print(f"HTTP error occurred: {http_err} - Status Code: {response.status_code}")
-                                print("Detailed error message:", response.text)
-                            except Exception as err:
-                                print(f"An unexpected error occurred: {err}")
-
+                            folder_path = "testC/"
+                            unique_filename = str(uuid.uuid4())  # Generate a random UUID string
+                            img_name = f"hand_{unique_filename}.jpg"
+                            cv2.imwrite(folder_path + img_name, hand_img)
+                            print(f"Saved {img_name} to {folder_path}")
+                        else:
+                            print("Cropped image is empty. Skipping save.")
 
     cv2.imshow("MediaPipe Hands (Right Hand Only)", frame)
 
