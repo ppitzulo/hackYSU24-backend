@@ -131,11 +131,11 @@ while cap.isOpened():
         cv2.rectangle(frame, (text_x, text_y - text_size[1] - 10), (text_x + text_size[0] + 10, text_y + 10), (0, 0, 0), -1)
         
         # Putting the text on the frame
-        cv2.putText(frame, latest_prediction, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
+        cv2.putText(frame, latest_prediction.split(":")[0], (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
 
 
 
-    cv2.imshow("MediaPipe Hands (Right Hand Only)", frame)
+    cv2.imshow("Dis-Chord", frame)
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
