@@ -19,14 +19,17 @@ cap = cv2.VideoCapture(0)
 
 # Variable to keep track of the last save time
 last_save_time = time.time()
-save_interval = 0.5  # Save an image every 0.5 seconds
+save_interval = 1.1  # Save an image every 0.5 seconds
 
 PREDICTION_URL = "https://guitarchords826-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/352d7a3b-5364-4b69-9fba-bce2cf2c928e/classify/iterations/Iteration6/image"
-# PREDICTION_URL = "https://guitarchords826-prediction.cognitiveservices.azure.com/customvision/v3.0/Prediction/352d7a3b-5364-4b69-9fba-bce2cf2c928e/classify/iterations/Iteration5/image"
+
 headers = {
     "Prediction-Key": "4a702a82e3b34cc8bfbb96c623f8bd80",
     "Content-Type": "application/octet-stream"
 }
+
+latest_prediction = None
+
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -96,16 +99,40 @@ while cap.isOpened():
                                 response.raise_for_status()  # This will raise an exception for HTTP error codes
 
                                 predictions = response.json().get('predictions', [])
-                                if predictions:  # Check if the predictions list is not empty
-                                    for prediction in predictions:
-                                        print("\t" + prediction['tagName'] + ": {0:.2f}%".format(prediction['probability'] * 100))
+                                # Right after receiving and processing predictions:
+                                if predictions:
+                                    # Assuming the most confident prediction is first
+                                    most_confident_prediction = predictions[0]
+                                    latest_prediction = f"{most_confident_prediction['tagName']}: {most_confident_prediction['probability'] * 100:.2f}%"
                                 else:
-                                    print("No predictions were returned.")
+                                    latest_prediction = "No predictions"
+
+                                # if predictions:  # Check if the predictions list is not empty
+                                #     for prediction in predictions:
+                                #         print("\t" + prediction['tagName'] + ": {0:.2f}%".format(prediction['probability'] * 100))
+                                # else:
+                                #     print("No predictions were returned.")
                             except requests.exceptions.HTTPError as http_err:
                                 print(f"HTTP error occurred: {http_err} - Status Code: {response.status_code}")
                                 print("Detailed error message:", response.text)
                             except Exception as err:
                                 print(f"An unexpected error occurred: {err}")
+    if latest_prediction:
+        # Setting the font scale and thickness
+        font_scale = 0.6
+        thickness = 2
+        
+        # Getting the width and height of the text box
+        text_size = cv2.getTextSize(latest_prediction, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)[0]
+        text_x = frame.shape[1] - text_size[0] - 10  # 10 pixels from the right edge
+        text_y = 20  # 20 pixels from the top
+        
+        # Setting the rectangle background
+        cv2.rectangle(frame, (text_x, text_y - text_size[1] - 10), (text_x + text_size[0] + 10, text_y + 10), (0, 0, 0), -1)
+        
+        # Putting the text on the frame
+        cv2.putText(frame, latest_prediction, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), thickness)
+
 
 
     cv2.imshow("MediaPipe Hands (Right Hand Only)", frame)
